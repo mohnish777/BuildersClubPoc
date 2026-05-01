@@ -10,7 +10,7 @@
     <string name="calendar_tool_finished">Calendar check complete</string>
     <string name="weekly_plan_title">Weekly Plan</string>
     <string name="weekly_plan_hero_title">Your week is being planned for you</string>
-    <string name="weekly_plan_hero_copy">Swiggy Agent is checking food, groceries, and dineout options, then building each day around your busy schedule.</string>
+    <string name="weekly_plan_hero_copy">Swiggy Agent is checking food, groceries, and dineout options, then building each day from your preferences.md</string>
     <string name="day_plan_hero_title">Your day is being planned for you</string>
     <string name="day_plan_hero_copy">Swiggy Agent is checking food, groceries, and dineout options, then shaping the best plan for today around your meetings.</string>
     <string name="weekly_plan_agent_title">Swiggy Agent orchestration</string>
@@ -21,6 +21,13 @@
     <string name="loading_day_title">Planning %1$s…</string>
     <string name="loading_day_copy">The agent is deciding the best breakfast, lunch, and dinner mix before revealing the next day.</string>
     <string name="today_label">Today</string>
+    <string name="next_day_fallback">Next day</string>
+    <string name="edit_day_hint">Tap any meal to edit</string>
+    <string name="edit_cta">Edit</string>
+    <string name="meal_editor_title">Change %1$s for %2$s</string>
+    <string name="meal_editor_copy">The agent picked the top option first, but you can switch to any backup choice it kept in memory.</string>
+    <string name="best_pick_label">Agent’s best pick</string>
+    <string name="backup_pick_label">Backup option %1$d</string>
     <string name="breakfast_label">Breakfast</string>
     <string name="lunch_label">Lunch</string>
     <string name="dinner_label">Dinner</string>

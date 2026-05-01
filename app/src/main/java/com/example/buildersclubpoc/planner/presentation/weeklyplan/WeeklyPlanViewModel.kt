@@ -2,6 +2,7 @@ package com.example.buildersclubpoc.planner.presentation.weeklyplan
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.buildersclubpoc.agent.preferences.MockUserPreferenceProfiles
 import com.example.buildersclubpoc.planner.presentation.PlannerMode
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,11 +11,30 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+enum class MealType {
+    BREAKFAST,
+    LUNCH,
+    DINNER,
+}
+
+data class MealSlotUi(
+    val type: MealType,
+    val selectedOption: String,
+    val rankedOptions: List<String>,
+)
+
 data class PlannedDayUi(
     val day: String,
-    val breakfast: String,
-    val lunch: String,
-    val dinner: String,
+    val breakfast: MealSlotUi,
+    val lunch: MealSlotUi,
+    val dinner: MealSlotUi,
+)
+
+data class MealEditorSheetState(
+    val day: String,
+    val mealType: MealType,
+    val selectedOption: String,
+    val rankedOptions: List<String>,
 )
 
 data class WeeklyPlanState(
@@ -23,10 +43,14 @@ data class WeeklyPlanState(
     val currentToolStatus: String = "Checking Swiggy Food recommendations",
     val currentDecisionStatus: String = "The agent is preparing your week",
     val revealedDays: List<PlannedDayUi> = emptyList(),
+    val mealEditorSheet: MealEditorSheetState? = null,
 )
 
 sealed interface WeeklyPlanAction {
     data class OnScreenShown(val plannerMode: PlannerMode) : WeeklyPlanAction
+    data class OnMealClicked(val day: String, val mealType: MealType) : WeeklyPlanAction
+    data class OnMealOptionSelected(val option: String) : WeeklyPlanAction
+    data object OnMealEditorDismissed : WeeklyPlanAction
 }
 
 class WeeklyPlanViewModel : ViewModel() {
@@ -38,6 +62,9 @@ class WeeklyPlanViewModel : ViewModel() {
     fun onAction(action: WeeklyPlanAction) {
         when (action) {
             is WeeklyPlanAction.OnScreenShown -> generatePlan(action.plannerMode)
+            is WeeklyPlanAction.OnMealClicked -> openMealEditor(action.day, action.mealType)
+            is WeeklyPlanAction.OnMealOptionSelected -> updateSelectedMeal(action.option)
+            WeeklyPlanAction.OnMealEditorDismissed -> dismissMealEditor()
         }
     }
 
@@ -46,8 +73,8 @@ class WeeklyPlanViewModel : ViewModel() {
         startedMode = plannerMode
 
         val plan = when (plannerMode) {
-            PlannerMode.DAY -> dayPlan
-            PlannerMode.WEEK -> weekPlan
+            PlannerMode.DAY -> buildDayPlan()
+            PlannerMode.WEEK -> buildWeekPlan()
         }
 
         val toolStatuses = listOf(
@@ -64,6 +91,7 @@ class WeeklyPlanViewModel : ViewModel() {
                     currentToolStatus = toolStatuses.first(),
                     currentDecisionStatus = "The agent is preparing your plan",
                     revealedDays = emptyList(),
+                    mealEditorSheet = null,
                 )
             }
 
@@ -71,17 +99,16 @@ class WeeklyPlanViewModel : ViewModel() {
                 _state.update { current ->
                     current.copy(currentToolStatus = status)
                 }
-                delay(1000)
+                delay(900)
             }
 
-            plan.forEachIndexed { idx,  dayPlan ->
+            plan.forEach { dayPlan ->
                 _state.update { current ->
                     current.copy(
                         currentDecisionStatus = "Decision engine is locking ${dayPlan.day}",
                     )
                 }
-                if (idx == 0) delay(7_000) else delay(4_000)
-
+                delay(2_000)
                 _state.update { current ->
                     current.copy(
                         revealedDays = current.revealedDays + dayPlan,
@@ -99,19 +126,121 @@ class WeeklyPlanViewModel : ViewModel() {
         }
     }
 
-    private companion object {
-        val weekPlan = listOf(
-            PlannedDayUi("Monday", "Greek yogurt bowl", "Paneer grain bowl", "Soup and veg toast"),
-            PlannedDayUi("Tuesday", "Veg poha", "Dal, roti, salad", "Millet roti and curry"),
-            PlannedDayUi("Wednesday", "Oats and fruit", "Quinoa khichdi", "Roasted veggie bowl"),
-            PlannedDayUi("Thursday", "Smoothie bowl", "Healthy thali", "Light paneer salad"),
-            PlannedDayUi("Friday", "Toast and eggs", "Brown rice lunch box", "Dinner booking suggestion"),
-            PlannedDayUi("Saturday", "Fruit yogurt cup", "Mediterranean bowl", "Comfort dinner plan"),
-            PlannedDayUi("Sunday", "Brunch recommendation", "Flexible lunch", "Groceries prep dinner"),
-        )
+    private fun openMealEditor(day: String, mealType: MealType) {
+        val plannedDay = _state.value.revealedDays.firstOrNull { it.day == day } ?: return
+        val mealSlot = plannedDay.slotFor(mealType)
 
-        val dayPlan = listOf(
-            PlannedDayUi("Today", "Greek yogurt bowl", "Paneer grain bowl", "Soup and veg toast"),
+        _state.update { current ->
+            current.copy(
+                mealEditorSheet = MealEditorSheetState(
+                    day = day,
+                    mealType = mealType,
+                    selectedOption = mealSlot.selectedOption,
+                    rankedOptions = mealSlot.rankedOptions,
+                ),
+            )
+        }
+    }
+
+    private fun updateSelectedMeal(option: String) {
+        val currentSheet = _state.value.mealEditorSheet ?: return
+
+        _state.update { current ->
+            current.copy(
+                revealedDays = current.revealedDays.map { day ->
+                    if (day.day != currentSheet.day) {
+                        day
+                    } else {
+                        day.withUpdatedSlot(
+                            mealType = currentSheet.mealType,
+                            selectedOption = option,
+                        )
+                    }
+                },
+                mealEditorSheet = null,
+            )
+        }
+    }
+
+    private fun dismissMealEditor() {
+        _state.update { current ->
+            current.copy(mealEditorSheet = null)
+        }
+    }
+
+    private fun buildWeekPlan(): List<PlannedDayUi> {
+        val profile = MockUserPreferenceProfiles.healthyBalancedProfile.mealPreferences
+        val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
+        return days.mapIndexed { index, day ->
+            PlannedDayUi(
+                day = day,
+                breakfast = MealSlotUi(
+                    type = MealType.BREAKFAST,
+                    selectedOption = rotate(profile.breakfastOptions, index).first(),
+                    rankedOptions = rotate(profile.breakfastOptions, index),
+                ),
+                lunch = MealSlotUi(
+                    type = MealType.LUNCH,
+                    selectedOption = rotate(profile.lunchOptions, index + 1).first(),
+                    rankedOptions = rotate(profile.lunchOptions, index + 1),
+                ),
+                dinner = MealSlotUi(
+                    type = MealType.DINNER,
+                    selectedOption = rotate(profile.dinnerOptions, index + 2).first(),
+                    rankedOptions = rotate(profile.dinnerOptions, index + 2),
+                ),
+            )
+        }
+    }
+
+    private fun buildDayPlan(): List<PlannedDayUi> {
+        val profile = MockUserPreferenceProfiles.healthyBalancedProfile.mealPreferences
+
+        return listOf(
+            PlannedDayUi(
+                day = "Today",
+                breakfast = MealSlotUi(
+                    type = MealType.BREAKFAST,
+                    selectedOption = profile.breakfastOptions.first(),
+                    rankedOptions = profile.breakfastOptions,
+                ),
+                lunch = MealSlotUi(
+                    type = MealType.LUNCH,
+                    selectedOption = profile.lunchOptions.first(),
+                    rankedOptions = profile.lunchOptions,
+                ),
+                dinner = MealSlotUi(
+                    type = MealType.DINNER,
+                    selectedOption = profile.dinnerOptions.first(),
+                    rankedOptions = profile.dinnerOptions,
+                ),
+            ),
         )
+    }
+
+    private fun rotate(options: List<String>, steps: Int): List<String> {
+        if (options.isEmpty()) return options
+        val normalizedSteps = steps % options.size
+        return options.drop(normalizedSteps) + options.take(normalizedSteps)
+    }
+
+    private fun PlannedDayUi.slotFor(mealType: MealType): MealSlotUi {
+        return when (mealType) {
+            MealType.BREAKFAST -> breakfast
+            MealType.LUNCH -> lunch
+            MealType.DINNER -> dinner
+        }
+    }
+
+    private fun PlannedDayUi.withUpdatedSlot(
+        mealType: MealType,
+        selectedOption: String,
+    ): PlannedDayUi {
+        return when (mealType) {
+            MealType.BREAKFAST -> copy(breakfast = breakfast.copy(selectedOption = selectedOption))
+            MealType.LUNCH -> copy(lunch = lunch.copy(selectedOption = selectedOption))
+            MealType.DINNER -> copy(dinner = dinner.copy(selectedOption = selectedOption))
+        }
     }
 }
