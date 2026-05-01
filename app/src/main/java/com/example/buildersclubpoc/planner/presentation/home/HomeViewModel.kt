@@ -63,7 +63,7 @@ class HomeViewModel : ViewModel() {
                 _state.update { current ->
                     current.copy(calendarStep = step)
                 }
-                delay(4_000)
+                delay(2_000)
             }
 
             _state.update { current ->

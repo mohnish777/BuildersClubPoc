@@ -1,7 +1,9 @@
 package com.example.buildersclubpoc.planner.presentation.weeklyplan
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,16 +12,23 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.LocalDining
+import androidx.compose.material.icons.outlined.ShoppingBasket
+import androidx.compose.material.icons.outlined.Storefront
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -27,40 +36,33 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.buildersclubpoc.R
 import com.example.buildersclubpoc.planner.presentation.PlannerMode
 import com.example.buildersclubpoc.ui.theme.BuildersClubPocTheme
-
-private data class DayPreview(
-    val day: String,
-    val breakfast: String,
-    val lunch: String,
-    val dinner: String,
-)
-
-private val weeklyPreview = listOf(
-    DayPreview("Monday", "Greek yogurt bowl", "Paneer grain bowl", "Soup and veg toast"),
-    DayPreview("Tuesday", "Veg poha", "Dal, roti, salad", "Millet roti and curry"),
-    DayPreview("Wednesday", "Oats and fruit", "Quinoa khichdi", "Roasted veggie bowl"),
-    DayPreview("Thursday", "Smoothie bowl", "Healthy thali", "Light paneer salad"),
-    DayPreview("Friday", "Toast and eggs", "Brown rice lunch box", "Dinner booking suggestion"),
-    DayPreview("Saturday", "Fruit yogurt cup", "Mediterranean bowl", "Comfort dinner plan"),
-    DayPreview("Sunday", "Brunch recommendation", "Flexible lunch", "Groceries prep dinner"),
-)
 
 @Composable
 fun WeeklyPlanRoot(
     plannerMode: PlannerMode,
     onBackClick: () -> Unit,
+    viewModel: WeeklyPlanViewModel = viewModel(),
 ) {
+    val state = viewModel.state.collectAsStateWithLifecycle().value
+
+    LaunchedEffect(plannerMode) {
+        viewModel.onAction(WeeklyPlanAction.OnScreenShown(plannerMode))
+    }
+
     WeeklyPlanScreen(
-        plannerMode = plannerMode,
+        state = state,
         onBackClick = onBackClick,
     )
 }
@@ -68,7 +70,7 @@ fun WeeklyPlanRoot(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun WeeklyPlanScreen(
-    plannerMode: PlannerMode,
+    state: WeeklyPlanState,
     onBackClick: () -> Unit,
 ) {
     val heroGradient = Brush.linearGradient(
@@ -124,7 +126,7 @@ fun WeeklyPlanScreen(
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                             )
                             Text(
-                                text = when (plannerMode) {
+                                text = when (state.plannerMode) {
                                     PlannerMode.DAY -> stringResource(R.string.day_plan_hero_title)
                                     PlannerMode.WEEK -> stringResource(R.string.weekly_plan_hero_title)
                                 },
@@ -136,7 +138,7 @@ fun WeeklyPlanScreen(
                         Spacer(modifier = Modifier.height(10.dp))
 
                         Text(
-                            text = when (plannerMode) {
+                            text = when (state.plannerMode) {
                                 PlannerMode.DAY -> stringResource(R.string.day_plan_hero_copy)
                                 PlannerMode.WEEK -> stringResource(R.string.weekly_plan_hero_copy)
                             },
@@ -147,7 +149,15 @@ fun WeeklyPlanScreen(
                 }
             }
 
-            items(weeklyPreview, key = { it.day }) { plan ->
+            item {
+                SwiggyToolStatusCard(
+                    currentToolStatus = state.currentToolStatus,
+                    currentDecisionStatus = state.currentDecisionStatus,
+                    isGenerating = state.isGenerating,
+                )
+            }
+
+            items(state.revealedDays, key = { it.day }) { plan ->
                 Card(
                     shape = RoundedCornerShape(24.dp),
                     colors = CardDefaults.cardColors(
@@ -171,6 +181,177 @@ fun WeeklyPlanScreen(
                     }
                 }
             }
+
+            if (state.isGenerating) {
+                item {
+                    LoadingDayCard(
+                        plannerMode = state.plannerMode,
+                        revealedCount = state.revealedDays.size,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SwiggyToolStatusCard(
+    currentToolStatus: String,
+    currentDecisionStatus: String,
+    isGenerating: Boolean,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.18f),
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.weekly_plan_agent_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+
+            Text(
+                text = stringResource(R.string.weekly_plan_agent_copy),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ToolChip(
+                    icon = Icons.Outlined.LocalDining,
+                    label = stringResource(R.string.tool_food),
+                    modifier = Modifier.weight(1f),
+                )
+                ToolChip(
+                    icon = Icons.Outlined.ShoppingBasket,
+                    label = stringResource(R.string.tool_instamart),
+                    modifier = Modifier.weight(1f),
+                )
+                ToolChip(
+                    icon = Icons.Outlined.Storefront,
+                    label = stringResource(R.string.tool_dineout),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (isGenerating) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(18.dp)
+                            .background(
+                                color = MaterialTheme.colorScheme.primary,
+                                shape = CircleShape,
+                            ),
+                    )
+                }
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    Text(
+                        text = currentToolStatus,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = currentDecisionStatus,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ToolChip(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    FilterChip(
+        selected = true,
+        onClick = {},
+        enabled = false,
+        modifier = modifier,
+        label = {
+            Text(text = label)
+        },
+        leadingIcon = {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+            )
+        },
+    )
+}
+
+@Composable
+private fun LoadingDayCard(
+    plannerMode: PlannerMode,
+    revealedCount: Int,
+) {
+    val nextDay = when (plannerMode) {
+        PlannerMode.DAY -> stringResource(R.string.today_label)
+        PlannerMode.WEEK -> {
+            val days = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+            days.getOrNull(revealedCount) ?: "Next day"
+        }
+    }
+
+    Card(
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        ),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                )
+                Text(
+                    text = stringResource(R.string.loading_day_title, nextDay),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+            }
+
+            Text(
+                text = stringResource(R.string.loading_day_copy),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
@@ -204,7 +385,16 @@ private fun PlannerRow(
 private fun WeeklyPlanScreenPreview() {
     BuildersClubPocTheme {
         WeeklyPlanScreen(
-            plannerMode = PlannerMode.WEEK,
+            state = WeeklyPlanState(
+                plannerMode = PlannerMode.WEEK,
+                isGenerating = true,
+                currentToolStatus = "Checking Swiggy Food recommendations",
+                currentDecisionStatus = "Decision engine is locking Wednesday",
+                revealedDays = listOf(
+                    PlannedDayUi("Monday", "Greek yogurt bowl", "Paneer grain bowl", "Soup and veg toast"),
+                    PlannedDayUi("Tuesday", "Veg poha", "Dal, roti, salad", "Millet roti and curry"),
+                ),
+            ),
             onBackClick = {},
         )
     }
