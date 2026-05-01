@@ -9,35 +9,56 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = PlannerGreenDark,
+    onPrimary = PlannerNight,
+    primaryContainer = PlannerGreen,
+    onPrimaryContainer = PlannerInkDark,
+    secondary = PlannerLeafDark,
+    onSecondary = PlannerNight,
+    secondaryContainer = PlannerLeaf,
+    onSecondaryContainer = PlannerInkDark,
+    tertiary = PlannerPeachDark,
+    onTertiary = PlannerNight,
+    tertiaryContainer = PlannerCoral,
+    onTertiaryContainer = PlannerNight,
+    background = PlannerNight,
+    onBackground = PlannerInkDark,
+    surface = Color(0xFF18201C),
+    onSurface = PlannerInkDark,
+    surfaceContainerHigh = Color(0xFF22302A),
+    onSurfaceVariant = PlannerStoneDark,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = PlannerGreen,
+    onPrimary = PlannerCream,
+    primaryContainer = PlannerGreenSoft,
+    onPrimaryContainer = PlannerInk,
+    secondary = PlannerLeaf,
+    onSecondary = PlannerCream,
+    secondaryContainer = PlannerPeach,
+    onSecondaryContainer = PlannerInk,
+    tertiary = PlannerCoral,
+    onTertiary = PlannerInk,
+    tertiaryContainer = Color(0xFFFCE7C9),
+    onTertiaryContainer = PlannerInk,
+    background = PlannerSand,
+    onBackground = PlannerInk,
+    surface = PlannerCream,
+    onSurface = PlannerInk,
+    surfaceContainerHigh = Color(0xFFF7F0E6),
+    onSurfaceVariant = PlannerStone,
 )
 
 @Composable
 fun BuildersClubPocTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

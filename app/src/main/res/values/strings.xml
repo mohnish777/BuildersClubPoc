@@ -1,3 +1,21 @@
 <resources>
-    <string name="app_name">BuildersClubPoc</string>
+    <string name="app_name">Swiggy Agent POC</string>
+    <string name="home_title">Swiggy Built-In Agent</string>
+    <string name="home_description">Let the AI plan, book, and order groceries for you!</string>
+    <string name="plan_for_day">Plan for a day</string>
+    <string name="plan_for_week">Plan for a week</string>
+    <string name="continue_to_weekly_plan">Continue</string>
+    <string name="calendar_tool_title">Swiggy Agent talking to your calendar</string>
+    <string name="calendar_tool_subtitle">Tool call to calendar</string>
+    <string name="calendar_tool_finished">Calendar check complete</string>
+    <string name="weekly_plan_title">Weekly Plan</string>
+    <string name="weekly_plan_hero_title">Weekly preview mode</string>
+    <string name="weekly_plan_hero_copy">This is the first stop after the voice trigger in your Excalidraw flow. The user reviews the week here before any future edits or auto execution.</string>
+    <string name="day_plan_hero_title">Day planning mode</string>
+    <string name="day_plan_hero_copy">You picked day mode on the home screen. For now this still lands in the shared planning preview while we build the detailed branching flow.</string>
+    <string name="breakfast_label">Breakfast</string>
+    <string name="lunch_label">Lunch</string>
+    <string name="dinner_label">Dinner</string>
+    <string name="cd_voice_planner">Voice planner trigger</string>
+    <string name="cd_go_back">Go back</string>
 </resources>
