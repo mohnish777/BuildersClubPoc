@@ -1,8 +1,10 @@
 # Swiggy Agent POC
 
-![Home Screen](docs/readme-images/homeScreen.png)
-![Plan Screen](docs/readme-images/planScreen.png)
-![Timeline Screen](docs/readme-images/timelineScreen.png)
+<p align="center">
+  <img src="docs/readme-images/homeScreen.png" alt="Home Screen" height="600" />
+  <img src="docs/readme-images/planScreen.png" alt="Plan Screen" height="600" />
+  <img src="docs/readme-images/timelineScreen.png" alt="Timeline Screen" height="600" />
+</p>
 
 ## What this is
 
@@ -76,4 +78,3 @@ This POC shows how one assistant can manage all of that with much less user effo
 - Weekly planning screen with progressive day-by-day generation
 - Edit bottom sheet for meal swaps
 - Timeline screen with editable fulfillment choices and grocery cart controls
-
