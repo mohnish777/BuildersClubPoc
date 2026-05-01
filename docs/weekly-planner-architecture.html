@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Day Planner Agent Architecture</title>
+  <style>
+    :root {
+      --bg: #f4efe6;
+      --panel: #fffaf2;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --line: #d5c7b3;
+      --accent: #d97706;
+      --accent-soft: #fff1d6;
+      --ui: #dbeafe;
+      --vm: #e0f2fe;
+      --agent: #dcfce7;
+      --skills: #fce7f3;
+      --tools: #ede9fe;
+      --bonus: #fee2e2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, #fff8ec 0%, transparent 28%),
+        radial-gradient(circle at bottom right, #fef3c7 0%, transparent 22%),
+        var(--bg);
+      color: var(--ink);
+    }
+
+    .page {
+      padding: 28px;
+      max-width: 1520px;
+      margin: 0 auto;
+    }
+
+    .hero {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+
+    .title-block h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+      line-height: 1.05;
+      letter-spacing: -0.03em;
+    }
+
+    .title-block p {
+      margin: 0;
+      color: var(--muted);
+      max-width: 760px;
+      font-size: 16px;
+    }
+
+    .mode-card {
+      min-width: 240px;
+      background: var(--bonus);
+      border: 1px solid #f5b8b8;
+      border-radius: 18px;
+      padding: 16px 18px;
+      box-shadow: 0 12px 32px rgba(31, 41, 55, 0.06);
+    }
+
+    .mode-card h2 {
+      margin: 0 0 10px;
+      font-size: 18px;
+    }
+
+    .mode-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .mode-card li + li {
+      margin-top: 6px;
+    }
+
+    .canvas {
+      position: relative;
+      min-height: 860px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      background: rgba(255, 250, 242, 0.92);
+      box-shadow: 0 16px 40px rgba(31, 41, 55, 0.08);
+      padding: 24px;
+    }
+
+    .column-label {
+      position: absolute;
+      top: 18px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .col-ui { left: 48px; }
+    .col-vm { left: 384px; }
+    .col-agent { left: 614px; }
+    .col-skills { left: 902px; }
+    .col-tools { left: 1210px; }
+
+    .card {
+      position: absolute;
+      width: 180px;
+      min-height: 84px;
+      background: var(--panel);
+      border: 2px solid var(--line);
+      border-radius: 22px;
+      padding: 16px;
+      box-shadow: 0 12px 24px rgba(31, 41, 55, 0.06);
+    }
+
+    .card h3 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.1;
+    }
+
+    .card p {
+      margin: 8px 0 0;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .card.small {
+      width: 160px;
+      min-height: 72px;
+      padding: 14px;
+    }
+
+    .input-card {
+      left: 530px;
+      top: 48px;
+      width: 260px;
+      min-height: 94px;
+      background: var(--accent-soft);
+      border-color: #f3b85f;
+      text-align: center;
+    }
+
+    .ui { background: var(--ui); }
+    .vm { background: var(--vm); }
+    .agent { background: var(--agent); }
+    .skills { background: var(--skills); }
+    .tools { background: var(--tools); }
+
+    .home { left: 38px; top: 210px; }
+    .weekly { left: 38px; top: 350px; }
+    .timeline { left: 38px; top: 500px; }
+    .final { left: 38px; top: 650px; }
+
+    .edit {
+      left: 246px;
+      top: 360px;
+      width: 150px;
+      min-height: 68px;
+    }
+
+    .viewmodel {
+      left: 360px;
+      top: 410px;
+      width: 220px;
+      min-height: 160px;
+    }
+
+    .agent-core {
+      left: 630px;
+      top: 378px;
+      width: 230px;
+      min-height: 180px;
+    }
+
+    .skill-breakfast { left: 920px; top: 240px; }
+    .skill-lunch { left: 920px; top: 360px; }
+    .skill-dinner { left: 920px; top: 480px; }
+    .skill-grocery { left: 920px; top: 600px; }
+
+    .food-tool { left: 1210px; top: 270px; }
+    .instamart-tool { left: 1210px; top: 450px; }
+    .dineout-tool { left: 1210px; top: 630px; }
+
+    .annotation {
+      position: absolute;
+      font-size: 14px;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.8);
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(213, 199, 179, 0.8);
+    }
+
+    .agent-note { left: 674px; top: 572px; }
+    .skills-note { left: 948px; top: 170px; }
+    .mcp-note { left: 1218px; top: 200px; }
+
+    svg.connector-layer {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .label {
+      font-size: 13px;
+      font-weight: 700;
+      fill: #6b7280;
+    }
+
+    .footnote {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 1400px) {
+      .canvas {
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <div class="title-block">
+        <h1>Smart Day Planner Agent</h1>
+        <p>
+          Browser-friendly architecture diagram for the Swiggy Builders Club prototype:
+          plan the week once, let the user tweak a choice, then execute each day through modular skills and mocked MCP tools.
+        </p>
+      </div>
+
+      <aside class="mode-card">
+        <h2>Weekly Mode</h2>
+        <ul>
+          <li>Plan once</li>
+          <li>Execute daily</li>
+          <li>User can tweak</li>
+        </ul>
+      </aside>
+    </section>
+
+    <section class="canvas">
+      <div class="column-label col-ui">UI LAYER</div>
+      <div class="column-label col-vm">STATE</div>
+      <div class="column-label col-agent">AGENT</div>
+      <div class="column-label col-skills">MODULAR SKILLS</div>
+      <div class="column-label col-tools">MCP TOOLS</div>
+
+      <div class="card input-card">
+        <h3>User Input</h3>
+        <p>"Plan my week" via voice simulation or button tap</p>
+      </div>
+
+      <div class="card ui home">
+        <h3>Home Screen</h3>
+        <p>Single trigger to start the weekly planning flow.</p>
+      </div>
+
+      <div class="card ui weekly">
+        <h3>Weekly Plan</h3>
+        <p>Mon-Sun meal plan preview with lightweight user control.</p>
+      </div>
+
+      <div class="card ui timeline">
+        <h3>Timeline Screen</h3>
+        <p>Daily execution feed with action status updates.</p>
+      </div>
+
+      <div class="card ui final">
+        <h3>Final State</h3>
+        <p>"Your week is handled."</p>
+      </div>
+
+      <div class="card ui small edit">
+        <h3>Edit Sheet</h3>
+        <p>Replace or remove one plan item.</p>
+      </div>
+
+      <div class="card vm viewmodel">
+        <h3>MainViewModel</h3>
+        <p>Holds <strong>ContextState</strong>, <strong>WeeklyPlan</strong>, and <strong>TimelineActions</strong>.</p>
+      </div>
+
+      <div class="card agent agent-core">
+        <h3>SmartDayPlannerAgent</h3>
+        <p><strong>generateWeeklyPlan()</strong><br><strong>executeDayPlan()</strong></p>
+      </div>
+
+      <div class="card skills small skill-breakfast">
+        <h3>BreakfastSkill</h3>
+        <p>Check context -> decide -> return action</p>
+      </div>
+
+      <div class="card skills small skill-lunch">
+        <h3>LunchSkill</h3>
+        <p>Check context -> decide -> return action</p>
+      </div>
+
+      <div class="card skills small skill-dinner">
+        <h3>DinnerSkill</h3>
+        <p>Check context -> decide -> return action</p>
+      </div>
+
+      <div class="card skills small skill-grocery">
+        <h3>GrocerySkill</h3>
+        <p>Check context -> decide -> return action</p>
+      </div>
+
+      <div class="card tools small food-tool">
+        <h3>FoodTool</h3>
+        <p>placeOrder()</p>
+      </div>
+
+      <div class="card tools small instamart-tool">
+        <h3>InstamartTool</h3>
+        <p>createCart()</p>
+      </div>
+
+      <div class="card tools small dineout-tool">
+        <h3>DineoutTool</h3>
+        <p>bookTable()</p>
+      </div>
+
+      <div class="annotation agent-note">Decision Engine</div>
+      <div class="annotation skills-note">Modular Intelligence</div>
+      <div class="annotation mcp-note">Swiggy MCP (Mocked)</div>
+
+      <svg class="connector-layer" viewBox="0 0 1460 860" preserveAspectRatio="none" aria-hidden="true">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L9,3 z" fill="#8b6b45"></path>
+          </marker>
+        </defs>
+
+        <path d="M660 144 L660 208 L130 208" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <text x="592" y="176" class="label">triggers</text>
+
+        <path d="M220 250 L220 350" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M220 436 L220 500" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M220 586 L220 650" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+
+        <path d="M220 392 L246 392" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <text x="225" y="380" class="label">edit</text>
+
+        <path d="M220 392 L360 450" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M220 250 L360 450" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <text x="248" y="432" class="label">updates state</text>
+
+        <path d="M580 488 L630 488" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <text x="590" y="474" class="label">triggers</text>
+
+        <path d="M860 420 L920 280" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M860 458 L920 396" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M860 506 L920 516" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M860 544 L920 636" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <text x="866" y="366" class="label">generates plan</text>
+
+        <path d="M1080 280 L1210 310" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M1080 396 L1210 490" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M1080 516 L1210 670" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <path d="M1080 636 L1210 490" fill="none" stroke="#8b6b45" stroke-width="3" marker-end="url(#arrow)"/>
+        <text x="1102" y="242" class="label">calls tool</text>
+
+        <path d="M860 520 L220 548" fill="none" stroke="#8b6b45" stroke-width="3" stroke-dasharray="10 10" marker-end="url(#arrow)"/>
+        <text x="506" y="530" class="label">executes actions</text>
+      </svg>
+    </section>
+
+    <p class="footnote">
+      Tip: open this file directly in your browser, or use it as a visual reference while recreating the same flow in Excalidraw or slides.
+    </p>
+  </div>
+</body>
+</html>

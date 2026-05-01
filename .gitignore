@@ -1,0 +1,16 @@
+*.iml
+.DS_Store
+
+# Gradle and local machine config
+.gradle/
+.kotlin/
+local.properties
+
+# IDE files
+.idea/
+
+# Build outputs
+build/
+captures/
+.externalNativeBuild/
+.cxx/
