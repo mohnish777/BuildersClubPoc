@@ -34,6 +34,13 @@
     <string name="timeline_title">Execution Timeline</string>
     <string name="timeline_hero_title">Today is now on autopilot</string>
     <string name="timeline_hero_copy">The agent is stepping through your day and logging every action as it orders, books, and prepares groceries.</string>
+    <string name="timeline_meal_sheet_title">Update %1$s</string>
+    <string name="timeline_meal_sheet_copy">Choose where this order should go. Dine out is available only when it makes sense for the meal.</string>
+    <string name="timeline_cart_sheet_title">Edit Instamart cart</string>
+    <string name="timeline_cart_sheet_copy">Keep the items you want for tomorrow and remove anything you do not need.</string>
+    <string name="timeline_option_office">Order to office address</string>
+    <string name="timeline_option_home">Order to home address</string>
+    <string name="timeline_option_dineout">Switch to dine out</string>
     <string name="breakfast_label">Breakfast</string>
     <string name="lunch_label">Lunch</string>
     <string name="dinner_label">Dinner</string>
